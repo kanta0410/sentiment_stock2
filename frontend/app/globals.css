@@ -1,0 +1,310 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Sentiment Stock Predictor - グローバルスタイル
+   Cyber-Finance / Minimal Futuristic ダークモード
+   ============================================================ */
+
+:root {
+  --bg-primary: #05080A;
+  --bg-secondary: #0a0f18;
+  --bg-card: rgba(10, 15, 24, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.03);
+
+  --accent-blue: #38bdf8;
+  --accent-blue-glow: rgba(56, 189, 248, 0.25);
+  --accent-green: #10b981;
+  --accent-green-glow: rgba(16, 185, 129, 0.3);
+  --accent-emerald: #34d399;
+  --accent-emerald-glow: rgba(52, 211, 153, 0.3);
+  --accent-red: #f43f5e;
+  --accent-red-glow: rgba(244, 63, 94, 0.3);
+  --accent-amber: #f59e0b;
+  --accent-cyan: #22d3ee;
+
+  --text-primary: #e8f0fe;
+  --text-secondary: #7b91b5;
+  --text-muted: #3d4f6b;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(56, 189, 248, 0.2);
+  --border-green: rgba(52, 211, 153, 0.2);
+
+  --gradient-blue: linear-gradient(135deg, #0f3460 0%, #38bdf8 100%);
+  --gradient-green: linear-gradient(135deg, #064e3b 0%, #10b981 100%);
+  --gradient-red: linear-gradient(135deg, #4c0519 0%, #f43f5e 100%);
+  --gradient-hero: linear-gradient(135deg, #05080A 0%, #070f1e 50%, #05080A 100%);
+  --gradient-cyber: linear-gradient(135deg, #0d1b2a 0%, #1a2744 50%, #0d1b2a 100%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── グラスカード ── */
+.glass-card {
+  background: rgba(10, 15, 28, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  transition: border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(56, 189, 248, 0.06);
+}
+
+/* ── グローエフェクト ── */
+.glow-blue  { box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 20px rgba(56, 189, 248, 0.03); }
+.glow-green { box-shadow: 0 0 40px rgba(52, 211, 153, 0.15), inset 0 0 20px rgba(52, 211, 153, 0.03); }
+.glow-red   { box-shadow: 0 0 40px rgba(244, 63, 94, 0.15), inset 0 0 20px rgba(244, 63, 94, 0.03); }
+.glow-emerald { box-shadow: 0 0 60px rgba(52, 211, 153, 0.2); }
+
+/* ── グラデーションテキスト ── */
+.gradient-text {
+  background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-green {
+  background: linear-gradient(90deg, #34d399, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── スキャンラインエフェクト ── */
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+  animation: scan 3s linear infinite;
+}
+
+/* ── アニメーション ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
+  50%       { opacity: 0.7; box-shadow: 0 0 12px currentColor; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes scan {
+  0%   { top: 0%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes neon-flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%  { opacity: 0.8; }
+  97%  { opacity: 1; }
+  98%  { opacity: 0.6; }
+  99%  { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-neon-flicker {
+  animation: neon-flicker 5s ease-in-out infinite;
+}
+
+/* スケルトンローダー */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-secondary) 25%,
+    rgba(56, 189, 248, 0.06) 50%,
+    var(--bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ── スクロールバー ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+
+/* ── ボタン ── */
+.btn-primary {
+  background: linear-gradient(135deg, #0f3460 0%, #38bdf8 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.4);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── バッジ ── */
+.badge-positive {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.badge-negative {
+  background: rgba(244, 63, 94, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.badge-neutral {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ── サイバーグリッド背景 ── */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── ネオンハイライト ── */
+.neon-text-green {
+  color: #34d399;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
+}
+
+.neon-text-blue {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.neon-badge {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.1);
+}
+
+.neon-badge-red {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #f43f5e;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(244, 63, 94, 0.5);
+}
+
+.neon-badge-blue {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}

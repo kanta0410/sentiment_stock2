@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for f:*)",
+      "Bash(do touch:*)",
+      "Bash(done)",
+      "Bash(npm install:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"from app.core.config import get_settings; s=get_settings\\(\\); print\\(''GEMINI_KEY:'', s.gemini_api_key[:10]+''...'' if s.gemini_api_key else ''NOT SET''\\)\")",
+      "Bash(python -c \"import fastapi, uvicorn, httpx, bs4, google.generativeai, yfinance, praw; print\\(''All imports OK''\\)\")",
+      "Bash(python -c \"from main import app; print\\(''FastAPI app loads OK, routes:'', [r.path for r in app.routes]\\)\")",
+      "Bash(npx next:*)",
+      "Bash(curl -s \"http://localhost:8000/api/predict/quick?ticker=7203.T&days=30\")",
+      "Bash(python -c \":*)",
+      "Bash(curl -s \"http://localhost:8000/api/predict/quick?ticker=7203.T&days=10\")"
+    ]
+  }
+}
