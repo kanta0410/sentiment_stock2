@@ -167,16 +167,28 @@ export default function AIAnalysisEngine({
           }}>
             スコア {sentimentScore >= 0 ? "+" : ""}{sentimentScore.toFixed(3)}
           </span>
-          {judgment && (
-            <span className="neon-badge" style={{
-              fontSize: "0.78rem",
-              background: "rgba(251,191,36,0.15)",
-              borderColor: "#fbbf24",
-              color: "#fbbf24",
-            }}>
-              JUDGMENT: {judgment}
-            </span>
-          )}
+          {judgment && (() => {
+            const jStyle =
+              judgment === "BUY"
+                ? { bg: "rgba(52,211,153,0.15)", border: "#34d399", color: "#34d399", cls: "neon-badge" }
+                : judgment === "WATCH"
+                ? { bg: "rgba(244,63,94,0.15)", border: "#f43f5e", color: "#f43f5e", cls: "neon-badge-red" }
+                : { bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.15)", color: "var(--text-secondary)", cls: "" };
+            return (
+              <span className={jStyle.cls} style={{
+                fontSize: "0.78rem",
+                background: jStyle.bg,
+                borderColor: jStyle.border,
+                color: jStyle.color,
+                border: `1px solid ${jStyle.border}`,
+                borderRadius: "6px",
+                padding: "3px 10px",
+                fontWeight: 700,
+              }}>
+                JUDGMENT: {judgment}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
@@ -205,7 +217,7 @@ export default function AIAnalysisEngine({
             fontFamily: "'Courier New', monospace",
             letterSpacing: "0.05em",
           }}>
-            gemini-1.5-flash :: {ticker} :: 分析完了
+            gemini-2.5-flash :: {ticker} :: 分析完了
           </span>
         </div>
 
