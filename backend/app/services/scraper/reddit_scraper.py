@@ -24,12 +24,13 @@ def _build_search_query(ticker: str) -> str:
 
 
 async def _search_subreddit(
-    client: httpx.AsyncClient, subreddit: str, query: str, limit: int = 5
+    client: httpx.AsyncClient, subreddit: str, query: str, limit: int = 100
 ) -> list[dict]:
     """特定サブレディットで検索"""
+    # 取得順を new (新着順) に変更 (デイトレーダー向け)
     url = (
         f"https://www.reddit.com/r/{subreddit}/search.json"
-        f"?q={query}&sort=new&limit={limit}&restrict_sr=true&t=month"
+        f"?q={query}&sort=new&limit={limit}&restrict_sr=true&t=week"
     )
     try:
         resp = await client.get(url, timeout=10)
@@ -41,16 +42,29 @@ async def _search_subreddit(
         for post in posts:
             p = post.get("data", {})
             title = p.get("title", "")
-            selftext = p.get("selftext", "")[:500]
+            selftext = p.get("selftext", "").strip()
             score = p.get("score", 0)
             num_comments = p.get("num_comments", 0)
+            created_utc = p.get("created_utc", 0.0)
+            
+            # ノイズフィルタリング
             if not title:
                 continue
+            if score < 5 or num_comments < 2:
+                continue
+            if not selftext or selftext in ("[deleted]", "[removed]"):
+                continue
+            
+            body_lower = selftext.lower()
+            if any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
+                continue
+
             results.append({
                 "title": title,
-                "body": selftext,
+                "body": selftext[:500],
                 "score_upvotes": score,
                 "num_comments": num_comments,
+                "created_utc": created_utc,
                 "subreddit": subreddit,
                 "source": "reddit",
             })
@@ -67,12 +81,13 @@ FINANCE_SUBREDDITS = {
 
 
 async def _search_global_reddit(
-    client: httpx.AsyncClient, query: str, limit: int = 8
+    client: httpx.AsyncClient, query: str, limit: int = 100
 ) -> list[dict]:
     """Reddit全体で検索（金融関連サブレディットのみ）"""
+    # 取得順を new (新着順) に変更し、limitを拡張 (デイトレーダー向け)
     url = (
         f"https://www.reddit.com/search.json"
-        f"?q={query}+stock+OR+shares+OR+earnings&sort=new&limit={limit * 3}&t=month&include_over_18=false"
+        f"?q={query}+stock+OR+shares+OR+earnings&sort=new&limit={limit}&t=week&include_over_18=false"
     )
     try:
         resp = await client.get(url, timeout=10)
@@ -84,17 +99,30 @@ async def _search_global_reddit(
         for post in posts:
             p = post.get("data", {})
             title = p.get("title", "")
-            selftext = p.get("selftext", "")[:500]
+            selftext = p.get("selftext", "").strip()
             score = p.get("score", 0)
+            num_comments = p.get("num_comments", 0)
             subreddit = p.get("subreddit", "")
-            # 金融関連サブレディットのみ残す
+            created_utc = p.get("created_utc", 0.0)
+            
+            # 金融関連サブレディットのみ残す、かつノイズフィルタリング
             if not title or subreddit not in FINANCE_SUBREDDITS:
                 continue
+            if score < 5 or num_comments < 2:
+                continue
+            if not selftext or selftext in ("[deleted]", "[removed]"):
+                continue
+            
+            body_lower = selftext.lower()
+            if any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
+                continue
+
             results.append({
                 "title": title,
-                "body": selftext,
+                "body": selftext[:500],
                 "score_upvotes": score,
-                "num_comments": p.get("num_comments", 0),
+                "num_comments": num_comments,
+                "created_utc": created_utc,
                 "subreddit": subreddit,
                 "source": "reddit",
             })
@@ -106,7 +134,7 @@ async def _search_global_reddit(
         return []
 
 
-async def fetch_reddit_sentiment(ticker: str) -> list[dict]:
+async def fetch_reddit_sentiment(ticker: str, limit: int = 30) -> list[dict]:
     """
     ティッカーに関連するReddit投稿を収集。
     日本株の場合、英語・日本語両方で検索。
@@ -118,17 +146,14 @@ async def fetch_reddit_sentiment(ticker: str) -> list[dict]:
     all_posts: list[dict] = []
 
     async with httpx.AsyncClient(headers=REDDIT_HEADERS, follow_redirects=True) as client:
-        # サブレディット別検索
+        # サブレディット別検索 (取得枠を拡張し、件数制限で打ち切らない)
         for sub in subreddits:
-            posts = await _search_subreddit(client, sub, query, limit=10)
+            posts = await _search_subreddit(client, sub, query, limit=100)
             all_posts.extend(posts)
-            if len(all_posts) >= 12:
-                break
 
-        # まだ少なければグローバル検索
-        if len(all_posts) < 5:
-            global_posts = await _search_global_reddit(client, query, limit=6)
-            all_posts.extend(global_posts)
+        # グローバル検索 (こちらも取得枠を拡張)
+        global_posts = await _search_global_reddit(client, query, limit=100)
+        all_posts.extend(global_posts)
 
     # 重複除去（タイトルベース）
     seen_titles: set[str] = set()
@@ -139,8 +164,11 @@ async def fetch_reddit_sentiment(ticker: str) -> list[dict]:
             seen_titles.add(key)
             unique_posts.append(post)
 
-    # アップボート数でソート（人気順）
-    unique_posts.sort(key=lambda x: x.get("score_upvotes", 0), reverse=True)
+    # エンゲージメント（score + num_comments）でソート（人気順）
+    unique_posts.sort(
+        key=lambda x: x.get("score_upvotes", 0) + x.get("num_comments", 0), 
+        reverse=True
+    )
 
-    logger.info(f"Reddit scraped {len(unique_posts)} posts for {ticker}")
-    return unique_posts[:10]
+    logger.info(f"Reddit scraped {len(unique_posts)} valid posts for {ticker}")
+    return unique_posts[:limit]

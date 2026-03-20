@@ -28,14 +28,15 @@ logger = logging.getLogger(__name__)
 async def predict_quick(
     ticker: str = Query(..., description="ティッカーシンボル (例: 7203.T, AAPL)"),
     days: int = Query(30, ge=7, le=90, description="株価履歴の日数"),
+    reddit_limit: int = Query(30, ge=10, le=50, description="Reddit投稿の取得上限"),
 ):
     ticker = ticker.upper().strip()
-    logger.info(f"Prediction request: ticker={ticker}, days={days}")
+    logger.info(f"Prediction request: ticker={ticker}, days={days}, reddit_limit={reddit_limit}")
 
     # 並行してデータ取得
     try:
         primary_task = fetch_primary_news(ticker)
-        social_task = fetch_reddit_sentiment(ticker)
+        social_task = fetch_reddit_sentiment(ticker, limit=reddit_limit)
         stock_info_task = asyncio.get_event_loop().run_in_executor(
             None, fetch_stock_info, ticker
         )
