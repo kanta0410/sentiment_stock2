@@ -12,7 +12,22 @@
       "Bash(npx next:*)",
       "Bash(curl -s \"http://localhost:8000/api/predict/quick?ticker=7203.T&days=30\")",
       "Bash(python -c \":*)",
-      "Bash(curl -s \"http://localhost:8000/api/predict/quick?ticker=7203.T&days=10\")"
+      "Bash(curl -s \"http://localhost:8000/api/predict/quick?ticker=7203.T&days=10\")",
+      "Bash(vercel:*)",
+      "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''next:'', p.dependencies.next\\)\")",
+      "Bash(powershell -Command \"iwr https://fly.io/install.ps1 -useb | iex\")",
+      "Bash($env:PATH += \";C:\\\\Users\\\\kanta\\\\.fly\\\\bin\")",
+      "Bash(\"C:\\\\Users\\\\kanta\\\\.fly\\\\bin\\\\flyctl.exe\" version:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/kanta/.fly/bin\")",
+      "Bash(flyctl version:*)",
+      "Bash(flyctl auth:*)",
+      "Bash(flyctl launch:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(pkill -f \"uvicorn main:app --host 0.0.0.0 --port 8001\")",
+      "Bash(netstat -ano)",
+      "Bash(cmd /c \"taskkill /PID 18516 /F\" 2>&1)",
+      "Bash(cmd /c \"taskkill /PID 18516 /F 2>&1\")"
     ]
   }
 }

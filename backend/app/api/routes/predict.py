@@ -66,18 +66,27 @@ async def predict_quick(
         raise HTTPException(status_code=500, detail=f"AI分析エラー: {str(e)}")
 
     # スキーマへ変換
+    # Geminiが返すsourceを正規化（primary→tdnet, secondary→reddit等）
+    _source_map = {
+        "primary": "tdnet", "secondary": "reddit",
+        "news": "tdnet", "sns": "reddit", "social": "reddit",
+    }
     news_articles = []
     for a in analysis_result.get("articles", []):
         label = a.get("label", "neutral")
         if label not in ("positive", "neutral", "negative"):
             label = "neutral"
+        raw_source = a.get("source", "tdnet")
+        source = _source_map.get(raw_source, raw_source)
+        if source not in ("tdnet", "reddit", "kabutan"):
+            source = "tdnet"
         news_articles.append(
             SentimentResult(
                 title=a.get("title", ""),
                 score=round(float(a.get("score", 0.0)), 4),
                 label=label,
                 explanation=a.get("explanation", ""),
-                source=a.get("source", "tdnet"),
+                source=source,
             )
         )
 

@@ -47,10 +47,13 @@ def _build_prompt(ticker: str, primary_articles: list[dict], social_posts: list[
         "- explanation: 日本語50-100字の根拠",
         f"- final_score: {FUNDAMENTAL_WEIGHT}×fundamental_score + {SOCIAL_WEIGHT}×social_score",
         "",
+        "- source: 一次情報は'tdnet'、Reddit SNS投稿は'reddit'を使用",
+        "",
         "純粋なJSONのみ返してください（コードブロック不要）:",
         """{
   "articles": [
-    {"title": "記事タイトル", "score": 0.0, "label": "positive", "explanation": "根拠", "source": "tdnet"}
+    {"title": "一次情報の記事タイトル", "score": 0.5, "label": "positive", "explanation": "根拠", "source": "tdnet"},
+    {"title": "Reddit投稿タイトル", "score": 0.3, "label": "positive", "explanation": "根拠", "source": "reddit"}
   ],
   "summary": "3〜4文の総合分析（日本語）",
   "fundamental_reason": "一次情報の主要要因（日本語・2文）",
