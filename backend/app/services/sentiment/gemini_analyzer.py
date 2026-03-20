@@ -31,7 +31,7 @@ SOCIAL_WEIGHT = 0.30
 def _init_gemini() -> genai.GenerativeModel:
     settings = get_settings()
     genai.configure(api_key=settings.gemini_api_key)
-    return genai.GenerativeModel("gemini-2.0-flash") # 1.5-flashが404になるため2.0-flashを試行
+    return genai.GenerativeModel("gemini-2.5-flash")  # gemini-2.0-flashはクォータ制限のため2.5-flashを使用
 
 
 def _build_prompt(ticker: str, primary_articles: list[dict], social_posts: list[dict]) -> str:
