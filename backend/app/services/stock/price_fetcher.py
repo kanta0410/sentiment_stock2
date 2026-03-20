@@ -1,149 +1,96 @@
 """
-株価データフェッチャー
-- 一次: pandas_datareader (stooq) - 安定、認証不要
-- 二次: yfinance - フォールバック
+株価データフェッチャー（httpx直接呼び出し版 - 外部ライブラリ不要）
+Yahoo Finance の非公式 JSON API を使用
 """
 import logging
-import re
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
-
-def _to_stooq_symbol(ticker: str) -> str:
-    """ティッカーをstooq形式に変換
-    7203.T -> 7203.JP
-    AAPL   -> AAPL.US
-    """
-    t = ticker.upper()
-    if t.endswith(".T"):
-        return t.replace(".T", ".JP")
-    if re.match(r"^\d{4}$", t):
-        return f"{t}.JP"
-    if "." not in t:
-        return f"{t}.US"
-    return t
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json",
+}
 
 
 def fetch_stock_info(ticker: str) -> dict:
-    """銘柄の現在値・会社名を取得"""
-    # stooq から最新価格を取得
+    """Yahoo Finance v8 APIから銘柄情報を取得"""
+    sym = ticker.upper()
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=5d"
+
     try:
-        import pandas_datareader as pdr
-        import datetime as dt
+        with httpx.Client(headers=HEADERS, timeout=15, follow_redirects=True) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
 
-        sym = _to_stooq_symbol(ticker)
-        end = dt.date.today()
-        start = end - dt.timedelta(days=7)
-        df = pdr.get_data_stooq(sym, start=start, end=end)
+        result = data.get("chart", {}).get("result", [])
+        if not result:
+            raise ValueError("No result")
 
-        if not df.empty:
-            latest = df.sort_index(ascending=False).iloc[0]
-            current_price = float(latest["Close"])
+        meta = result[0].get("meta", {})
+        current_price = (
+            meta.get("regularMarketPrice")
+            or meta.get("previousClose")
+            or 0.0
+        )
+        company_name = meta.get("longName") or meta.get("shortName") or None
 
-            # 会社名はyfinanceから試みる（失敗してもOK）
-            company_name = _get_company_name(ticker)
-            return {
-                "ticker": ticker,
-                "company_name": company_name,
-                "current_price": current_price,
-            }
-    except Exception as e:
-        logger.warning(f"stooq price fetch failed for {ticker}: {e}")
-
-    # yfinanceフォールバック
-    try:
-        import yfinance as yf
-        stock = yf.Ticker(ticker)
-        info = stock.fast_info
-        price = getattr(info, "last_price", None) or getattr(info, "previous_close", None) or 0.0
         return {
             "ticker": ticker,
-            "company_name": _get_company_name(ticker),
-            "current_price": float(price),
+            "company_name": company_name,
+            "current_price": float(current_price),
         }
     except Exception as e:
-        logger.warning(f"yfinance fallback failed for {ticker}: {e}")
-
-    return {
-        "ticker": ticker,
-        "company_name": None,
-        "current_price": 0.0,
-    }
-
-
-def _get_company_name(ticker: str) -> str | None:
-    """会社名を取得（失敗時はNone）"""
-    try:
-        import yfinance as yf
-        stock = yf.Ticker(ticker)
-        info = stock.info
-        return (
-            info.get("longName")
-            or info.get("shortName")
-            or None
-        )
-    except Exception:
-        return None
+        logger.warning(f"Yahoo Finance info failed for {ticker}: {e}")
+        return {"ticker": ticker, "company_name": None, "current_price": 0.0}
 
 
 def fetch_price_history(ticker: str, days: int = 30) -> list[dict]:
-    """株価履歴を取得（stooq優先）"""
+    """Yahoo Finance v8 APIから株価履歴を取得"""
+    sym = ticker.upper()
+    range_str = f"{min(days + 5, 90)}d"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range={range_str}"
+
     try:
-        import pandas_datareader as pdr
-        import datetime as dt
+        with httpx.Client(headers=HEADERS, timeout=15, follow_redirects=True) as client:
+            resp = client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
 
-        sym = _to_stooq_symbol(ticker)
-        end = dt.date.today()
-        start = end - dt.timedelta(days=days + 10)
-        df = pdr.get_data_stooq(sym, start=start, end=end)
-
-        if df.empty:
-            raise ValueError("empty dataframe")
-
-        df = df.sort_index(ascending=True)
-        result = []
-        for ts, row in df.iterrows():
-            result.append({
-                "date": ts.strftime("%Y-%m-%d"),
-                "open": round(float(row["Open"]), 2),
-                "high": round(float(row["High"]), 2),
-                "low": round(float(row["Low"]), 2),
-                "close": round(float(row["Close"]), 2),
-                "volume": int(row["Volume"]) if row["Volume"] else 0,
-            })
-        logger.info(f"stooq price history: {len(result)} rows for {ticker}")
-        return result[-days:]
-
-    except Exception as e:
-        logger.warning(f"stooq history failed for {ticker}: {e}, trying yfinance")
-
-    # yfinanceフォールバック
-    try:
-        import yfinance as yf
-        from datetime import datetime, timedelta
-
-        end = datetime.now()
-        start = end - timedelta(days=days + 5)
-        stock = yf.Ticker(ticker)
-        hist = stock.history(start=start.strftime("%Y-%m-%d"), end=end.strftime("%Y-%m-%d"))
-
-        if hist.empty:
+        result = data.get("chart", {}).get("result", [])
+        if not result:
             return []
 
-        result = []
-        for ts, row in hist.iterrows():
-            result.append({
-                "date": ts.strftime("%Y-%m-%d"),
-                "open": round(float(row["Open"]), 2),
-                "high": round(float(row["High"]), 2),
-                "low": round(float(row["Low"]), 2),
-                "close": round(float(row["Close"]), 2),
-                "volume": int(row["Volume"]) if row["Volume"] else 0,
+        timestamps = result[0].get("timestamp", [])
+        indicators = result[0].get("indicators", {})
+        quotes = indicators.get("quote", [{}])[0]
+
+        opens = quotes.get("open", [])
+        highs = quotes.get("high", [])
+        lows = quotes.get("low", [])
+        closes = quotes.get("close", [])
+        volumes = quotes.get("volume", [])
+
+        price_history = []
+        for i, ts in enumerate(timestamps):
+            if i >= len(closes) or closes[i] is None:
+                continue
+            dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+            price_history.append({
+                "date": dt.strftime("%Y-%m-%d"),
+                "open": round(float(opens[i] or closes[i]), 2),
+                "high": round(float(highs[i] or closes[i]), 2),
+                "low": round(float(lows[i] or closes[i]), 2),
+                "close": round(float(closes[i]), 2),
+                "volume": int(volumes[i] or 0) if i < len(volumes) else 0,
             })
-        logger.info(f"yfinance price history: {len(result)} rows for {ticker}")
-        return result[-days:]
+
+        logger.info(f"Yahoo Finance history: {len(price_history)} rows for {ticker}")
+        return price_history[-days:]
 
     except Exception as e:
-        logger.warning(f"yfinance history also failed for {ticker}: {e}")
+        logger.warning(f"Yahoo Finance history failed for {ticker}: {e}")
         return []
