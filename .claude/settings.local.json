@@ -27,7 +27,8 @@
       "Bash(pkill -f \"uvicorn main:app --host 0.0.0.0 --port 8001\")",
       "Bash(netstat -ano)",
       "Bash(cmd /c \"taskkill /PID 18516 /F\" 2>&1)",
-      "Bash(cmd /c \"taskkill /PID 18516 /F 2>&1\")"
+      "Bash(cmd /c \"taskkill /PID 18516 /F 2>&1\")",
+      "Bash(pip show:*)"
     ]
   }
 }
