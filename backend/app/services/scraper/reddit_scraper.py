@@ -27,10 +27,9 @@ async def _search_subreddit(
     client: httpx.AsyncClient, subreddit: str, query: str, limit: int = 100
 ) -> list[dict]:
     """特定サブレディットで検索"""
-    # 取得順を new (新着順) に変更 (デイトレーダー向け)
     url = (
         f"https://www.reddit.com/r/{subreddit}/search.json"
-        f"?q={query}&sort=new&limit={limit}&restrict_sr=true&t=week"
+        f"?q={query}&sort=new&limit={limit}&restrict_sr=true&t=month"
     )
     try:
         resp = await client.get(url, timeout=10)
@@ -47,21 +46,19 @@ async def _search_subreddit(
             num_comments = p.get("num_comments", 0)
             created_utc = p.get("created_utc", 0.0)
             
-            # ノイズフィルタリング
+            # ノイズフィルタリング（score OR comments どちらかが条件を満たせば通す）
             if not title:
                 continue
-            if score < 5 or num_comments < 2:
+            if score < 3 and num_comments < 3:
                 continue
-            if not selftext or selftext in ("[deleted]", "[removed]"):
-                continue
-            
-            body_lower = selftext.lower()
-            if any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
+            cleaned_text = selftext if selftext not in ("[deleted]", "[removed]") else ""
+            body_lower = cleaned_text.lower()
+            if cleaned_text and any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
                 continue
 
             results.append({
                 "title": title,
-                "body": selftext[:500],
+                "body": cleaned_text[:500],
                 "score_upvotes": score,
                 "num_comments": num_comments,
                 "created_utc": created_utc,
@@ -84,10 +81,9 @@ async def _search_global_reddit(
     client: httpx.AsyncClient, query: str, limit: int = 100
 ) -> list[dict]:
     """Reddit全体で検索（金融関連サブレディットのみ）"""
-    # 取得順を new (新着順) に変更し、limitを拡張 (デイトレーダー向け)
     url = (
         f"https://www.reddit.com/search.json"
-        f"?q={query}+stock+OR+shares+OR+earnings&sort=new&limit={limit}&t=week&include_over_18=false"
+        f"?q={query}+stock+OR+shares+OR+earnings&sort=new&limit={limit}&t=month&include_over_18=false"
     )
     try:
         resp = await client.get(url, timeout=10)
@@ -108,18 +104,16 @@ async def _search_global_reddit(
             # 金融関連サブレディットのみ残す、かつノイズフィルタリング
             if not title or subreddit not in FINANCE_SUBREDDITS:
                 continue
-            if score < 5 or num_comments < 2:
+            if score < 3 and num_comments < 3:
                 continue
-            if not selftext or selftext in ("[deleted]", "[removed]"):
-                continue
-            
-            body_lower = selftext.lower()
-            if any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
+            cleaned_text = selftext if selftext not in ("[deleted]", "[removed]") else ""
+            body_lower = cleaned_text.lower()
+            if cleaned_text and any(spam in body_lower for spam in ["discord", "pump", "subscribe"]):
                 continue
 
             results.append({
                 "title": title,
-                "body": selftext[:500],
+                "body": cleaned_text[:500],
                 "score_upvotes": score,
                 "num_comments": num_comments,
                 "created_utc": created_utc,

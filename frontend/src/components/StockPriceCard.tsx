@@ -35,6 +35,12 @@ const DIRECTION_CONFIG = {
   },
 };
 
+function formatPrice(ticker: string, price: number): string {
+  const isJP = ticker.endsWith(".T") || /^\d{4}$/.test(ticker);
+  if (isJP) return `¥${price.toLocaleString("ja-JP")}`;
+  return `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export default function StockPriceCard({ data }: StockPriceCardProps) {
   const dir = DIRECTION_CONFIG[data.predicted_direction];
 
@@ -86,7 +92,7 @@ export default function StockPriceCard({ data }: StockPriceCardProps) {
           className="gradient-text-green animate-neon-flicker"
           style={{ fontSize: "2.8rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: "16px" }}
         >
-          ¥{data.current_price?.toLocaleString("ja-JP") ?? "---"}
+          {data.current_price != null ? formatPrice(data.ticker, data.current_price) : "---"}
         </p>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
