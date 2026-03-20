@@ -66,10 +66,12 @@ async def predict_quick(
         raise HTTPException(status_code=500, detail=f"AI分析エラー: {str(e)}")
 
     # スキーマへ変換
-    # Geminiが返すsourceを正規化（primary→tdnet, secondary→reddit等）
+    # Geminiが返すsourceを正規化
     _source_map = {
         "primary": "tdnet", "secondary": "reddit",
-        "news": "tdnet", "sns": "reddit", "social": "reddit",
+        "news": "tdnet", "official_news": "tdnet", "sec_filing": "tdnet",
+        "press_release": "tdnet", "earnings": "tdnet", "kabutan": "tdnet",
+        "sns": "reddit", "social": "reddit", "twitter": "reddit",
     }
     news_articles = []
     for a in analysis_result.get("articles", []):
