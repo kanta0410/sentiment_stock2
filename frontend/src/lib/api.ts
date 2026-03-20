@@ -1,6 +1,6 @@
 import type { PredictionResponse } from "@/types/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 export async function fetchPrediction(
   ticker: string,
@@ -11,10 +11,14 @@ export async function fetchPrediction(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail ?? `HTTP ${res.status}`);
+    throw new Error(err.detail ?? `HTTP ${res.status}: サーバーエラーが発生しました`);
   }
 
   return res.json() as Promise<PredictionResponse>;
+}
+
+export function isNetworkError(err: unknown): boolean {
+  return err instanceof TypeError && err.message === "Failed to fetch";
 }
 
 export async function checkHealth(): Promise<boolean> {

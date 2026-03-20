@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { fetchPrediction } from "@/lib/api";
+import { fetchPrediction, isNetworkError } from "@/lib/api";
 import type { PredictionResponse } from "@/types/api";
 import AIAnalysisEngine from "@/components/AIAnalysisEngine";
 import PriceChart from "@/components/PriceChart";
@@ -136,7 +136,11 @@ export default function DashboardPage() {
       const data = await fetchPrediction(ticker, days);
       setPrediction(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "予期しないエラーが発生しました");
+      if (isNetworkError(err)) {
+        setError("バックエンドサーバーに接続できません。`uvicorn main:app --port 8001` で起動してください。");
+      } else {
+        setError(err instanceof Error ? err.message : "予期しないエラーが発生しました");
+      }
     } finally {
       setIsLoading(false);
     }
