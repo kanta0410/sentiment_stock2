@@ -198,7 +198,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                Sentiment Predictor
+                Agent S
               </p>
               <p style={{ fontSize: "0.55rem", color: "var(--text-muted)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
                 AI-POWERED MARKET ANALYSIS

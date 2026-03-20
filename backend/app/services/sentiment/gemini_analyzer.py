@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # 基本設定
 FUNDAMENTAL_WEIGHT = 0.70
 SOCIAL_WEIGHT = 0.30
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3-flash-preview"
 
 
 def _init_gemini() -> genai.GenerativeModel:
