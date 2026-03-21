@@ -56,9 +56,6 @@ graph LR
 `backend/.env` に以下のキーを設定してください。
 ```env
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-REDDIT_CLIENT_ID=YOUR_CLIENT_ID
-REDDIT_CLIENT_SECRET=YOUR_CLIENT_SECRET
-REDDIT_USER_AGENT=sentiment_stock_aggregator
 ```
 
 ### **1. サーバーの準備**
