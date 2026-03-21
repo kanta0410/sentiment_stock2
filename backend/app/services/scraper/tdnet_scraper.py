@@ -6,6 +6,7 @@
 import re
 import logging
 import httpx
+import datetime
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ HEADERS = {
 }
 
 
-async def fetch_yahoo_jp_news(ticker: str) -> list[dict]:
+async def fetch_yahoo_jp_news(ticker: str, target_ts: float | None = None) -> list[dict]:
     """Yahoo Finance Japan から銘柄別ニュースを取得"""
     url = f"https://finance.yahoo.co.jp/quote/{ticker}/news"
     articles = []
@@ -45,6 +46,21 @@ async def fetch_yahoo_jp_news(ticker: str) -> list[dict]:
         if title in ("ニュース", "企業情報", "株価", "チャート"):
             continue
         href = link.get("href", "")
+        
+        # 時刻情報があればパースして target_ts フィルタリング
+        pub_time = 0.0
+        time_tag = link.parent.find("time") if link.parent else link.find("time")
+        if time_tag and time_tag.has_attr("datetime"):
+            try:
+                dt_str = time_tag["datetime"]
+                pub_dt = datetime.datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+                pub_time = pub_dt.timestamp()
+            except Exception:
+                pass
+        
+        if target_ts and pub_time and pub_time > target_ts:
+            continue
+            
         articles.append({
             "title": title,
             "body": "",
@@ -59,7 +75,7 @@ async def fetch_yahoo_jp_news(ticker: str) -> list[dict]:
     return articles
 
 
-async def fetch_yahoo_us_news(ticker: str) -> list[dict]:
+async def fetch_yahoo_us_news(ticker: str, target_ts: float | None = None) -> list[dict]:
     """Yahoo Finance から US株ニュースを取得（JSON API）"""
     url = (
         f"https://query1.finance.yahoo.com/v1/finance/search"
@@ -84,10 +100,16 @@ async def fetch_yahoo_us_news(ticker: str) -> list[dict]:
         title = item.get("title", "")
         if not title:
             continue
+            
+        pub_time = item.get("providerPublishTime", 0)
+        if target_ts and pub_time > target_ts:
+            continue
+            
         articles.append({
             "title": title,
             "body": item.get("summary", ""),
             "date": "",
+            "created_utc": pub_time,
             "source": "tdnet",
         })
 
@@ -95,12 +117,21 @@ async def fetch_yahoo_us_news(ticker: str) -> list[dict]:
     return articles
 
 
-async def fetch_primary_news(ticker: str) -> list[dict]:
+async def fetch_primary_news(ticker: str, target_date: str | datetime.datetime | None = None) -> list[dict]:
     """銘柄に応じた一次情報ニュースを取得"""
     is_japanese = ticker.upper().endswith(".T") or re.match(r"^\d{4}$", ticker)
+    
+    target_ts = None
+    if target_date:
+        if isinstance(target_date, str):
+            dt = datetime.datetime.strptime(target_date[:10], "%Y-%m-%d")
+        else:
+            dt = target_date
+        dt = datetime.datetime.combine(dt.date(), datetime.time(23, 59, 59), tzinfo=datetime.timezone.utc)
+        target_ts = dt.timestamp()
 
     if is_japanese:
-        articles = await fetch_yahoo_jp_news(ticker)
+        articles = await fetch_yahoo_jp_news(ticker, target_ts)
         return articles[:12]
     else:
-        return await fetch_yahoo_us_news(ticker)
+        return await fetch_yahoo_us_news(ticker, target_ts)

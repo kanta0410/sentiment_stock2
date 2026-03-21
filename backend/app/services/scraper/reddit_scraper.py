@@ -5,6 +5,7 @@ Reddit SNS スクレイパー
 import logging
 import re
 import httpx
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def _build_search_query(ticker: str) -> str:
 
 
 async def _search_subreddit(
-    client: httpx.AsyncClient, subreddit: str, query: str, limit: int = 100
+    client: httpx.AsyncClient, subreddit: str, query: str, limit: int = 100, target_ts: float | None = None
 ) -> list[dict]:
     """特定サブレディットで検索"""
     url = (
@@ -49,6 +50,11 @@ async def _search_subreddit(
             # ノイズフィルタリング（score OR comments どちらかが条件を満たせば通す）
             if not title:
                 continue
+                
+            # 未来のデータをタイムマシン検証用に除外
+            if target_ts and created_utc > target_ts:
+                continue
+                
             if score < 3 and num_comments < 3:
                 continue
             cleaned_text = selftext if selftext not in ("[deleted]", "[removed]") else ""
@@ -78,7 +84,7 @@ FINANCE_SUBREDDITS = {
 
 
 async def _search_global_reddit(
-    client: httpx.AsyncClient, query: str, limit: int = 100
+    client: httpx.AsyncClient, query: str, limit: int = 100, target_ts: float | None = None
 ) -> list[dict]:
     """Reddit全体で検索（金融関連サブレディットのみ）"""
     url = (
@@ -104,6 +110,11 @@ async def _search_global_reddit(
             # 金融関連サブレディットのみ残す、かつノイズフィルタリング
             if not title or subreddit not in FINANCE_SUBREDDITS:
                 continue
+                
+            # 未来のデータをタイムマシン検証用に除外
+            if target_ts and created_utc > target_ts:
+                continue
+                
             if score < 3 and num_comments < 3:
                 continue
             cleaned_text = selftext if selftext not in ("[deleted]", "[removed]") else ""
@@ -128,7 +139,7 @@ async def _search_global_reddit(
         return []
 
 
-async def fetch_reddit_sentiment(ticker: str, limit: int = 30) -> list[dict]:
+async def fetch_reddit_sentiment(ticker: str, limit: int = 30, target_date: str | datetime.datetime | None = None) -> list[dict]:
     """
     ティッカーに関連するReddit投稿を収集。
     日本株の場合、英語・日本語両方で検索。
@@ -137,16 +148,25 @@ async def fetch_reddit_sentiment(ticker: str, limit: int = 30) -> list[dict]:
     query = _build_search_query(ticker)
     subreddits = SUBREDDITS_JP if is_japanese else SUBREDDITS_US
 
+    target_ts = None
+    if target_date:
+        if isinstance(target_date, str):
+            dt = datetime.datetime.strptime(target_date[:10], "%Y-%m-%d")
+        else:
+            dt = target_date
+        dt = datetime.datetime.combine(dt.date(), datetime.time(23, 59, 59), tzinfo=datetime.timezone.utc)
+        target_ts = dt.timestamp()
+
     all_posts: list[dict] = []
 
     async with httpx.AsyncClient(headers=REDDIT_HEADERS, follow_redirects=True) as client:
         # サブレディット別検索 (取得枠を拡張し、件数制限で打ち切らない)
         for sub in subreddits:
-            posts = await _search_subreddit(client, sub, query, limit=100)
+            posts = await _search_subreddit(client, sub, query, limit=100, target_ts=target_ts)
             all_posts.extend(posts)
 
         # グローバル検索 (こちらも取得枠を拡張)
-        global_posts = await _search_global_reddit(client, query, limit=100)
+        global_posts = await _search_global_reddit(client, query, limit=100, target_ts=target_ts)
         all_posts.extend(global_posts)
 
     # 重複除去（タイトルベース）
