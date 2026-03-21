@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sentiment Stock Predictor | AI駆動の株価センチメント分析",
+  title: "Agent S",
   description:
     "Gemini AIとニュース・SNS分析で日本株・米国株の株価方向性を予測するダッシュボード。TDnet・Redditのデータをリアルタイムに分析します。",
   keywords: ["株価予測", "センチメント分析", "AI", "Gemini", "投資", "日本株"],

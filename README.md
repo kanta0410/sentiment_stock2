@@ -1,4 +1,4 @@
-# 💹 Stock Sentiment Predictor (Sentiment Stock 2)
+# Agent S
 > **Quant-Style Sentiment Analysis Powered by Google Gemini 2.0-Flash**
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
@@ -56,9 +56,6 @@ graph LR
 `backend/.env` に以下のキーを設定してください。
 ```env
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-REDDIT_CLIENT_ID=YOUR_CLIENT_ID
-REDDIT_CLIENT_SECRET=YOUR_CLIENT_SECRET
-REDDIT_USER_AGENT=sentiment_stock_aggregator
 ```
 
 ### **1. サーバーの準備**
