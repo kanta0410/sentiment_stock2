@@ -1,4 +1,4 @@
-# 💹 Stock Sentiment Predictor (Sentiment Stock 2)
+# Agent S
 > **Quant-Style Sentiment Analysis Powered by Google Gemini 2.0-Flash**
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
